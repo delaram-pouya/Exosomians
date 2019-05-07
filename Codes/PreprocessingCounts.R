@@ -6,7 +6,6 @@
 #   Output: Labels Matrix
 
 
-
 source('Codes/Functions.R')
 Initialize()
 
@@ -47,6 +46,10 @@ RefineCellLineNames <-  function(Files) {
 
 Counts <- RefineCellLineNames(countsFiles)
 
+### filtering Counts based on Valid IDs defined by Ali
+ValidIDs <- designMat2$id
+Counts <- lapply(Counts, function(x) x[rownames(x) %in% ValidIDs,])
+
 
 
 #### Filtering noisy (false) regions (samples) based on IC expression value ####
@@ -69,7 +72,20 @@ LabelMat <- data.frame(ic=rowSums(FilterCounts[['IC']]), ev=rowSums(FilterCounts
 
 write.csv(LabelMat, file = 'Data/TertiaryLabelsMat.csv', quote = F, na = 'NA', row.names = T, col.names = T)
 
-LabelMat <- read.csv('Data/TertiaryLabelsMat.csv')
+
+
+
+
+
+##### making the final design matrix based on new IC_threshold ####
+
+designMatNgram <- read.csv('Data/NgramLen4DesignMatrix.csv',stringsAsFactors = F)
+FilterDesignMat <- designMatNgram[IC_FILTER_PASSED_INDICES,]
+write.csv(FilterDesignMat, 'Data/filterNgramDesignMat.csv',quote = F, na = 'NA', row.names = T, col.names = T)
+
+## checking if filtered regions are compatible between DesignMatrix and label-Matrix
+sum(rownames(FilterCounts[[1]])!=rownames(FilterDesignMat))
+sum(rownames(LabelMat)!=rownames(FilterDesignMat))
 
 
 

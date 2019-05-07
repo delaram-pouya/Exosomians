@@ -35,21 +35,12 @@ ngramMat <- sapply(1:length(Feature_Ngrams),
 ngramMat <- as.data.frame(do.call(rbind, ngramMat))
 colnames(ngramMat) <- All_Possible_ngrams
 rownames(ngramMat) <- designMat$id
-head(ngramMat)
-dim(ngramMat)
-summary(rowSums(ngramMat))
-write.csv(ngramMat,'/media/pgdrive/users/delaram/data/ExosomeProj/Data/ngramMatrix.csv',quote = F)
 
-designMat2 <- cbind(designMat, ngramMat)
-write.csv(designMat2,'/media/pgdrive/users/delaram/data/ExosomeProj/Data/NgramLen4DesignMatrix.csv',quote = F)
+summary(rowSums(ngramMat))
+write.csv(ngramMat,'Data/ngramMatrix.csv',quote = F)
+
+designMatNgram <- cbind(designMat, ngramMat)
+write.csv(designMatNgram,'Data/NgramLen4DesignMatrix.csv',quote = F)
 ###################
 
 
-
-tmp <- pairwiseAlignment(pattern=ngrams[2:4], subject=data[4],
-                  patternQuality=PhredQuality(22L),
-                  subjectQuality=PhredQuality(22L),
-                  type="global-local",
-                  substitutionMatrix=NULL, fuzzyMatrix=NULL,
-                  gapOpening=10, gapExtension=4,
-                  scoreOnly=FALSE)

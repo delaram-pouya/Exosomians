@@ -3,10 +3,24 @@ Initialize = function()
   options(stringsAsFactors = F)
   
   #### Loading required libraries ####
-  library(ggplot2)
+  options(stringsAsFactors = F)
   
+  #BiocManager::install('pacman')
+  
+  pac <- list('DESeq2', 'ggplot2', 'limma', 'pheatmap',
+              'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer', 
+              'plyr', 'gridExtra','gridExtra','caTools')
+  
+  print(paste(pac , lapply(pac, require, character.only = TRUE), sep = ' : '))
+  
+  pacman::p_load('DESeq2', 'ggplot2', 'limma', 'pheatmap',
+                 'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer',
+                 'plyr','gridExtra','gridExtra','caTools')
   
 }
+
+
+
 
 #### Functions ####
 FindRepetitionIndex = function(aVector)
@@ -24,6 +38,7 @@ FindRepetitionIndex = function(aVector)
   
   repetitionIndex  
 }
+
 
 
 CalcSummaryForCellLines = function(selectedCounts)

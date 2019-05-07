@@ -87,4 +87,5 @@ write.csv(designMat, file = 'Data/PrimaryDesignMat.csv', quote = F, na = 'NA', r
 
 
 designMat = read.csv('Data/PrimaryDesignMat.csv')
-View(head(designMat))
+
+
