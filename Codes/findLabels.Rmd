@@ -1,0 +1,308 @@
+---
+title: "Exosome Project"
+output: html_notebook
+---
+  
+  
+##### Finding the threshod for labeling  
+```{r}
+Initialize <- function(){
+  options(stringsAsFactors = F)
+  
+  #BiocManager::install('pacman')
+  
+  pac <- list('e1071' ,'reshape2', 'ggrepel', 'kernlab','pROC', 'RColorBrewer','plyr','gridExtra','gridExtra','caTools','data.table','VennDiagram')
+  print(paste(pac , lapply(pac, require, character.only = TRUE), sep = ' : '))
+  pacman::p_load('e1071' ,'reshape2', 'ggrepel', 'RColorBrewer','plyr','gridExtra',
+                 'gridExtra','caTools','data.table','kernlab','pROC','VennDiagram')
+}
+Initialize()
+
+```
+loading packages
+
+
+
+
+```{r}
+bed <- read.table('~/Exosomians/collection_clusterBed/combined.cluster.scoref10.annotated.bed',header = F)
+setwd('/home/delaram/Exosomians/collection_clusterBed/smRNA_counts/')
+f.raw <-  list.files(".",'.txt')
+counts.raw <- lapply(f.raw, read.table)
+
+names(counts.raw) <- substr(f.raw,1,2)
+counts.t.raw <- do.call(cbind,counts.raw)
+
+head(counts.raw[[1]])
+```
+loading bed file and raw counts
+
+
+```{r}
+setwd('~/Exosomians/collection_clusterBed')#smRNA_counts
+f <- list.files("~/Exosomians/collection_clusterBed",'.txt')
+counts <- lapply(f,read.table)
+lapply(counts, dim)
+
+names(counts) <- substr(f,1,2)
+counts.t <- do.call(cbind,counts)
+
+head(counts[[1]])
+```
+loading normalized counts
+
+
+
+```{r}
+
+EV.cl <- toupper(gsub('\\..*','',colnames(counts[['EV']])))
+IC.cl <- toupper(gsub('\\..*','',gsub('\\_.*','',colnames(counts[['IC']]))))
+CM.cl <- toupper(gsub('\\..*','',colnames(counts[['EV']])))
+
+setdiff(EV.cl, IC.cl)
+setdiff(IC.cl, EV.cl) ## SKBR==SKBR3  & CNLM1A==LM1A
+IC.cl[IC.cl=='SKBR'] <- 'SKBR3'
+EV.cl[EV.cl=='CNLM1A'] <- 'LM1A' 
+CM.cl <- EV.cl
+
+length(unique(EV.cl) ) ## 11 cell-lines
+x <- counts; names(x)<- names(counts)
+colnames(x[['EV']]) <- EV.cl ;colnames(x[['IC']]) <- IC.cl; colnames(x[['CM']]) <- CM.cl
+```
+setting cell-line names
+
+
+```{r}
+tfit <- readRDS('~/Exosomians/collection_clusterBed/tfit.rds')
+IC.vs.EV <- topTreat(tfit, coef=1, n=Inf)
+IC.vs.CM <- topTreat(tfit, coef=2, n=Inf)
+CM.vs.EV <- topTreat(tfit, coef=3, n=Inf)
+
+topDeGenes = IC.vs.EV[order(IC.vs.EV$logFC, decreasing = F), ]
+head(topDeGenes)
+```
+loading DE analysis results
+
+```{r}
+### 
+# IC: 
+# 3Q = 50
+# median = 22 
+# min = 11
+
+index.f <- rowSums(counts.raw[['IC']])>50
+table(index.f)
+counts.filt <- lapply(counts, function(x)subset(x,index.f) ); names(counts.filt) <- names(counts)
+
+```
+filtering regions which have low expression in IC
+
+
+
+There are 2 labeling techniques:
+1. label based on rowSum
+2. label based on DE 
+
+
+
+1. label based on rowSum 
+```{r}
+nrow(counts.raw[['EV']])
+
+index.EV <- rowSums(counts.raw[['EV']])>22
+table(index.EV)
+
+c.filt <- subset(counts.t.raw, index.f & index.EV)  
+
+dim(subset(counts.t.raw, index.f)) # total labels
+dim(c.filt) # transported labels
+
+```
+
+filtering regions not presented in EV (as 'not-transport' label)
+
+* total labels = 28040
+
+* index.EV = 1 -> 7859 trasnported lables
+
+* index.EV = 22 -> 2338 trasnported lables
+
+
+
+2. label based on DE 
+```{r}
+DE.nontransp  = rownames(subset(topDeGenes, logFC > 3))
+DE.transport = rownames(subset(topDeGenes, logFC < (-3) ))
+filter.nontransp <- rownames( subset(counts.t.raw, index.f & !index.EV) )
+filter.transport <- rownames(c.filt)
+
+```
+
+
+
+
+```{r}
+length(DE.transport)
+length(DE.nontransp)
+
+length(filter.transport)
+length(filter.nontransp)
+```
+
+
+```{r}
+sum( !DE.transport %in% filter.transport) # all of them are in the c.filt: logFC<-3 #580
+sum( DE.nontransp %in% filter.transport) ### ~ 340 :(
+
+
+x = list(DE.nontransp , DE.transport , filter.nontransp, filter.transport)
+names(x) <- c('DE.not-transported','DE.transported','filter.not-trans','filter.transp')
+
+venn.plot <- venn.diagram(x , NULL, fill=c("cyan1", "deeppink4",'gold','darkblue'),
+                          alpha=c(0.4,0.4,0.4,0.4), 
+                          cex =2.2, cat.fontface=1, category.names=names(x))
+grid.draw(venn.plot)
+```
+
+
+
+
+
+```{r}
+
+DE.nontransp  = rownames(subset(topDeGenes, logFC > 3))
+DE.transport = rownames(subset(topDeGenes, logFC < (-3) ))
+label.df <- data.frame(regions=rownames(counts.filt[['EV']]),
+                label=ifelse(rownames(counts.filt[['EV']])%in% DE.transport, 1,
+                             ifelse(rownames(counts.filt[['EV']])%in%DE.nontransp, 0, -1 )) ,
+                rowsum=rowSums(counts.filt[['EV']]) )
+
+
+head(label.df)
+```
+finding best labels
+
+
+
+```{r}
+## encoding target features
+rownames(label.df)= NULL
+DElabels <- subset(label.df, label != -1)
+DElabels$label = factor(DElabels$label, levels = c(0, 1)) 
+head(DElabels)
+
+
+```
+removing labels not preseted in DE analysis (non-sig. logFC)
+
+
+```{r}
+p1=ggplot(DElabels, aes(x=as.character(label), y=rowsum)) +
+  geom_boxplot(aes(fill=as.character(label) )) + theme_bw() +
+  ylim(c(1,1000))+xlab('DE labels')+ggtitle('filtered-outliers')
+
+p2=ggplot(DElabels, aes(x=as.character(label), y=rowsum)) +
+  geom_boxplot(aes(fill=as.character(label) ))+xlab('DE labels') + theme_bw()
+
+grid.arrange(p1,p2,nrow=1,ncol=2)
+
+```
+
+
+
+
+
+
+
+
+############################### initial SVM training 
+```{r}
+set.seed(123) 
+split = sample.split(DElabels$label , SplitRatio = 0.75) 
+training_set = subset(DElabels, split == TRUE ) 
+test_set = subset(DElabels, split == FALSE) 
+
+training_set = training_set[,-1]
+test_set = test_set[,-1]
+
+```
+Spliting dataset to train and test data 
+
+
+```{r}
+
+classifier = svm(formula = label ~ rowsum, 
+                 data = training_set, 
+                 type = 'C-classification', 
+                 kernel = 'linear') 
+classifier
+
+```
+Training an SVM classifier
+
+```{r}
+# Predicting the Test set results 
+y_pred = predict(classifier, newdata = test_set[-1])
+
+# Making the Confusion Matrix 
+cm = table(test_set[,1], y_pred)
+cm
+
+accuracy = (cm[1,1]+cm[2,2])/sum(cm)
+print(paste0('accuracy: ', round(accuracy, 2)))
+```
+
+predicting labels for non-filtered data based on DE
+
+```{r}
+Evlabel = data.frame(regions = rownames(counts.filt[['EV']]), rowsum=  rowSums(counts.filt[['EV']]))
+rownames(Evlabel) =NULL
+head(Evlabel)
+
+perdicted_EV_labels = predict(classifier, newdata = Evlabel[-1] )
+perdicted_EV_transport = Evlabel[ifelse(perdicted_EV_labels==0,FALSE,TRUE),]$regions
+perdicted_EV_Not_trans = Evlabel[ifelse(perdicted_EV_labels==1,FALSE,TRUE),]$regions
+
+```
+
+
+```{r}
+venList = list( DE.transport , filter.transport, perdicted_EV_transport,
+                perdicted_EV_Not_trans, DE.nontransp)
+names(venList) <- c('DE.tp','filt.tp','SVM_EV_transp',
+                    'SVM.EV.Not.tp', 'DE.Not.tp')
+
+venn.plot2 <- venn.diagram(venList , NULL, fill=c("cyan1", "deeppink4",'darkblue','gold','grey'),
+                          alpha=c(0.4,0.4,0.4,0.4,0.4), 
+                          cex =2, cat.fontface=1, category.names=names(venList))
+grid.draw(venn.plot2)
+
+```
+
+We are dealing with one dimension and the data is not linearly seperable (labels overlap -> check the boxplot), therefore, the classifier can not reach high sensitivity.
+
+
+
+
+```{r}
+
+table(DElabels$label)
+
+quantile(DElabels$rowsum[DElabels$label==1], 0.25) -
+  quantile(DElabels$rowsum[DElabels$label==0], 0.75)
+
+#### final thereshold for labeling ~ 20 
+MinCountOfDEtransp = min(DElabels$rowsum[DElabels$label==1]) 
+thirdQcountDENotTransp = quantile(DElabels$rowsum[DElabels$label==0], 0.75)
+OneinEachCellLine = length(EV.cl) - 2 #removing HCC1395
+
+print(paste0('final theresholds: ', round(MinCountOfDEtransp,0), 
+             ' or ', round(thirdQcountDENotTransp,0), 
+             ' or ', round(OneinEachCellLine,0)))
+```
+
+
+
+
+
+
