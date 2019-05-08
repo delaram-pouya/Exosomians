@@ -7,15 +7,15 @@ Initialize = function()
   
   #BiocManager::install('pacman')
   
-  pac <- list('DESeq2', 'ggplot2', 'limma', 'pheatmap',
+  pac <- list( 'ggplot2', 'limma', 'pheatmap',
               'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer', 
-              'plyr', 'gridExtra','gridExtra','caTools')
+              'plyr', 'gridExtra','gridExtra','caTools','e1071')
   
   print(paste(pac , lapply(pac, require, character.only = TRUE), sep = ' : '))
   
-  pacman::p_load('DESeq2', 'ggplot2', 'limma', 'pheatmap',
+  pacman::p_load( 'ggplot2', 'limma', 'pheatmap',
                  'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer',
-                 'plyr','gridExtra','gridExtra','caTools')
+                 'plyr','gridExtra','gridExtra','caTools','e1071')
   
 }
 
