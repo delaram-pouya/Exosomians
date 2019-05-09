@@ -46,6 +46,8 @@ RefineCellLineNames <-  function(Files) {
 
 Counts <- RefineCellLineNames(countsFiles)
 
+
+
 ### filtering Counts based on Valid IDs defined by Ali
 ValidIDs <- designMat2$id
 Counts <- lapply(Counts, function(x) x[rownames(x) %in% ValidIDs,])
@@ -76,7 +78,6 @@ write.csv(LabelMat, file = 'Data/TertiaryLabelsMat.csv', quote = F, na = 'NA', r
 
 
 
-
 ##### making the final design matrix based on new IC_threshold ####
 
 designMatNgram <- read.csv('Data/NgramLen4DesignMatrix.csv',stringsAsFactors = F)
@@ -89,5 +90,51 @@ sum(rownames(LabelMat)!=rownames(FilterDesignMat))
 
 
 
+
+
+## checking length distribution 
+## filtering regions with unusual lengths
+
+LabelMat <- read.csv('Data/TertiaryLabelsMat.csv', stringsAsFactors = F)
+FilteredBed <- merge(LabelMat,bed,by.x='X',by.y='id',all.x=T)
+
+bed <- read.table('Data/Annotation/combined.cluster.scoref10.bed')
+colnames(bed) <- c('chr', 'start', 'end', 'id', 'score','strand')
+bed$width <- bed$end - bed$start
+
+lenDisChr <- ggplot(bed, aes(x=width,y=chr))+geom_boxplot(aes(fill=chr))+theme(legend.position = "none")+ggtitle('width distribution(raw bed)')
+lenDisChrFilt <- ggplot(FilteredBed, aes(x=width,y=chr))+geom_boxplot(aes(fill=chr))+theme(legend.position = "none")+ggtitle('width distribution(filtered bed)')
+
+
+DrawBarPlot <- function(LabelColumn){
+  ggplot(data.frame(LabelColumn), aes(x=Var1,y=Freq,color='black'))+
+    geom_bar(stat = 'identity',color="dark blue", fill="cadetblue2",width=0.4)+xlab('label')+theme_bw()
+}
+
+DrawBoxPlot <- function(DataTable, Title){
+  ggplot(DataTable, aes(x=label,y=width))+
+    geom_boxplot(aes(fill=label))+theme_bw()+
+    ggtitle(Title)
+}
+
+
+
+pdf('RegionLengthDis.pdf',width=9)
+grid.arrange(lenDisChr, lenDisChrFilt,nrow=1,ncol=2)
+grid.arrange(
+  DrawBoxPlot(FilteredBed, 'width distribution'), 
+  DrawBarPlot(table(FilteredBed$label)),
+  DrawBoxPlot(subset(FilteredBed, width>500), 'width-Dis(>500)'), 
+  DrawBarPlot(table(FilteredBed[FilteredBed$width>500,'label'])),
+  ncol=2,nrow=2
+)
+grid.arrange(
+  DrawBoxPlot(subset(FilteredBed, width<15), 'width-Dis(<15)'), 
+  DrawBarPlot(table(FilteredBed[FilteredBed$width<15,'label'])),
+  DrawBoxPlot(subset(FilteredBed, width<500&width>15), 'width-Dis(15:500)'), 
+  DrawBarPlot(table(FilteredBed[FilteredBed$width<500&FilteredBed$width>15,'label'])),
+  ncol=2,nrow=2
+)
+dev.off()
 
 

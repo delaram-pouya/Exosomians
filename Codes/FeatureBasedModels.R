@@ -1,3 +1,16 @@
+# In this file, we will read the design matrix and labels,
+#   then we will select the wanted features and 
+#   then we will train 3 types of feature based models on the data 
+#   first, three SVM models with diferent parameters 
+#   second, a naive-Bayes model 
+#   third, three Random forest models
+
+#   Input: design Matix and label matrix
+#   Output: classifier + performance measures
+
+
+
+
 source('Codes/Functions.R')
 Initialize()
 h2o.init()
@@ -91,7 +104,7 @@ rf3 = h2o.randomForest(x =features, y = label, training_frame = training_set.h2o
                        validation_frame = test_set.h2o, balance_classes = T, ntrees = 200, max_depth = 20, seed = 1398)
 
 
-cm <- as.matrix(h2o.confusionMatrix(rf3))[1:2,1:2]
+cm <- as.matrix(h2o.confusionMatrix(rf1)[1:2,1:2])
 sensitivity = as.numeric(cm[2, 2])/(as.numeric(cm[2, 2])+ as.numeric(cm[2, 1]))
 specificity = as.numeric(cm[1, 1])/(as.numeric(cm[1, 1])+ as.numeric(cm[1, 2]))
 Accuracy  = (as.numeric(cm[1, 1])+as.numeric(cm[2, 2]))/sum(as.numeric(cm))
