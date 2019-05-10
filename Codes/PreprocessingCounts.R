@@ -95,12 +95,13 @@ sum(rownames(LabelMat)!=rownames(FilterDesignMat))
 ## checking length distribution 
 ## filtering regions with unusual lengths
 
-LabelMat <- read.csv('Data/TertiaryLabelsMat.csv', stringsAsFactors = F)
-FilteredBed <- merge(LabelMat,bed,by.x='X',by.y='id',all.x=T)
-
 bed <- read.table('Data/Annotation/combined.cluster.scoref10.bed')
 colnames(bed) <- c('chr', 'start', 'end', 'id', 'score','strand')
 bed$width <- bed$end - bed$start
+
+LabelMat <- read.csv('Data/TertiaryLabelsMat.csv', stringsAsFactors = F)
+FilteredBed <- merge(LabelMat,bed,by.x='X',by.y='id',all.x=T)
+
 
 lenDisChr <- ggplot(bed, aes(x=width,y=chr))+geom_boxplot(aes(fill=chr))+theme(legend.position = "none")+ggtitle('width distribution(raw bed)')
 lenDisChrFilt <- ggplot(FilteredBed, aes(x=width,y=chr))+geom_boxplot(aes(fill=chr))+theme(legend.position = "none")+ggtitle('width distribution(filtered bed)')
@@ -136,5 +137,31 @@ grid.arrange(
   ncol=2,nrow=2
 )
 dev.off()
+
+
+
+LENGTH_MIN <- 15
+LENGTH_MAX <- 500
+
+### down-limit leads to loosing many labels 
+nrow(subset(FilteredBed, width<LENGTH_MAX))
+nrow(subset(FilteredBed, width<LENGTH_MAX & width>LENGTH_MIN))
+LENGTH_MIN <- 9
+
+
+designMat <- read.csv('Data/filterNgramDesignMat.csv',stringsAsFactors = F)
+LabelMat <- read.csv('Data/TertiaryLabelsMat.csv', stringsAsFactors = F)
+TotalMatrix <- merge(designMat, LabelMat,'X','X',all.x=T,all.y = T)
+TotalMatrix <- TotalMatrix[FilteredBed$width < LENGTH_MAX & FilteredBed$width > LENGTH_MIN ,]
+write.csv(TotalMatrix, 'Data/MergedDesignMatLabel_LenFilter.csv',quote = F, na = 'NA', row.names = F, col.names = T)
+
+
+
+
+
+
+
+
+
 
 
