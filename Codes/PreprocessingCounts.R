@@ -1,6 +1,8 @@
 # In this file, we will read the data,
 #   Try to filter the noisy (false) regions (samples/sequences) based on their IC expression value,
-#   Then label the data, i.e. which sample/sequence is exported via exosome
+#   Then, label the data, i.e. which sample/sequence is exported via exosome
+#   Then, check the width distribution of the RNA regions
+#   Then, filter the label and design matrix based on width distributions
 
 #   Input: Raw data files (smRNA_counts) 
 #   Output: Labels Matrix
@@ -65,7 +67,7 @@ print(paste0('Percentage of Passed Regions: %' ,
 FilterCounts <- lapply(Counts, function(x) x[IC_FILTER_PASSED_INDICES,])
 names(FilterCounts) <- names(Counts)
 
-EV_EXPORTED_THRESHOLD <- 20
+EV_EXPORTED_THRESHOLD = 20
 EV_FILTER_PASSED_INDICES <- rowSums(FilterCounts[['EV']]) > EV_EXPORTED_THRESHOLD
 
 
@@ -119,47 +121,45 @@ DrawBoxPlot <- function(DataTable, Title){
 }
 
 
+LENGTH_MIN = 15
+LENGTH_MAX = 500
 
 pdf('RegionLengthDis.pdf',width=9)
 grid.arrange(lenDisChr, lenDisChrFilt,nrow=1,ncol=2)
 grid.arrange(
   DrawBoxPlot(FilteredBed, 'width distribution'), 
   DrawBarPlot(table(FilteredBed$label)),
-  DrawBoxPlot(subset(FilteredBed, width>500), 'width-Dis(>500)'), 
-  DrawBarPlot(table(FilteredBed[FilteredBed$width>500,'label'])),
+  DrawBoxPlot(subset(FilteredBed, width > LENGTH_MAX), 'width-Dis(>500)'), 
+  DrawBarPlot(table(FilteredBed[FilteredBed$width>LENGTH_MAX ,'label'])),
   ncol=2,nrow=2
 )
 grid.arrange(
-  DrawBoxPlot(subset(FilteredBed, width<15), 'width-Dis(<15)'), 
-  DrawBarPlot(table(FilteredBed[FilteredBed$width<15,'label'])),
-  DrawBoxPlot(subset(FilteredBed, width<500&width>15), 'width-Dis(15:500)'), 
-  DrawBarPlot(table(FilteredBed[FilteredBed$width<500&FilteredBed$width>15,'label'])),
+  DrawBoxPlot(subset(FilteredBed, width < LENGTH_MIN ), 'width-Dis(<15)'), 
+  DrawBarPlot(table(FilteredBed[FilteredBed$width < LENGTH_MIN,'label'])),
+  DrawBoxPlot(subset(FilteredBed, width < LENGTH_MAX & width > LENGTH_MIN), 'width-Dis(15:500)'), 
+  DrawBarPlot(table(FilteredBed[FilteredBed$width<LENGTH_MAX &  FilteredBed$width>LENGTH_MIN,'label'])),
   ncol=2,nrow=2
 )
 dev.off()
 
 
-
-LENGTH_MIN <- 15
-LENGTH_MAX <- 500
-
 ### down-limit leads to loosing many labels 
-nrow(subset(FilteredBed, width<LENGTH_MAX))
-nrow(subset(FilteredBed, width<LENGTH_MAX & width>LENGTH_MIN))
-LENGTH_MIN <- 9
+print (paste0('number of labels without min-limit: ',
+              nrow(subset(FilteredBed, width<LENGTH_MAX))))
 
+print(paste0('number of labels with min-limit: ', 
+             nrow(subset(FilteredBed, width<LENGTH_MAX & width>LENGTH_MIN))))
+
+LENGTH_MIN = 9
+
+
+#### making the final feature+label matrix and filtering it based on region length
 
 designMat <- read.csv('Data/filterNgramDesignMat.csv',stringsAsFactors = F)
 LabelMat <- read.csv('Data/TertiaryLabelsMat.csv', stringsAsFactors = F)
 TotalMatrix <- merge(designMat, LabelMat,'X','X',all.x=T,all.y = T)
 TotalMatrix <- TotalMatrix[FilteredBed$width < LENGTH_MAX & FilteredBed$width > LENGTH_MIN ,]
 write.csv(TotalMatrix, 'Data/MergedDesignMatLabel_LenFilter.csv',quote = F, na = 'NA', row.names = F, col.names = T)
-
-
-
-
-
-
 
 
 

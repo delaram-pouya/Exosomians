@@ -1,10 +1,11 @@
-#  In this file, we will try to find the ngrams of RNA sequences
-# to use them as features. We'll make all the possible 4-grams
-# and align them to the sequence. The alignment scores will be used as features
+#  In this file, we will try to find the ngrams(K-mers) 
+#     of RNA sequences to use them as features. 
+#     We'll make all the possible 4-grams and 2-grams
+#     then, we'll check the count of the ngrams in each RNA sequence
 
-#install.packages('gtools')
-library(gtools)
-library(Biostrings)
+
+source('Codes/Functions.R')
+Initialize()
 
 N_GRAM_SIZE = 4
 
@@ -41,6 +42,7 @@ write.csv(ngramMat,'Data/ngramMatrix.csv',quote = F)
 
 designMatNgram <- cbind(designMat, ngramMat)
 write.csv(designMatNgram,'Data/NgramLen4DesignMatrix.csv',quote = F)
+
 ###################
 
 
