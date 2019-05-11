@@ -2,8 +2,6 @@
 
 Initialize = function()
 {
-  options(stringsAsFactors = F)
-  
   #### Loading required libraries ####
   options(stringsAsFactors = F)
   
@@ -11,13 +9,13 @@ Initialize = function()
   
   pac <- list( 'ggplot2', 'limma', 'pheatmap','Biostrings',
               'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer', 
-              'plyr', 'gridExtra','gridExtra','caTools','e1071', 'h2o','gtools')
+              'plyr', 'gridExtra','caTools', 'h2o','gtools')
   
   print(paste(pac , lapply(pac, require, character.only = TRUE), sep = ' : '))
   
   pacman::p_load( 'ggplot2', 'limma', 'pheatmap', 'Biostrings',
                  'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer',
-                 'plyr','gridExtra','gridExtra','caTools','e1071','h2o','gtools')
+                 'plyr','gridExtra','caTools','h2o','gtools')
 }
 
 
