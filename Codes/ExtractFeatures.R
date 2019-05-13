@@ -86,6 +86,5 @@ designMat = merge(designMat, annotFileMoreDetailed, all.x = T)
 write.csv(designMat, file = 'Data/PrimaryDesignMat.csv', quote = F, na = 'NA', row.names = F, col.names = T)
 
 
-designMat = read.csv('Data/PrimaryDesignMat.csv')
-
+designMat2 = read.csv('Data/PrimaryDesignMat.csv')
 

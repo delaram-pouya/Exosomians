@@ -31,8 +31,6 @@ writeFasta(Sequence, "Data/RegionsLenFilter.fasta")
 
 
 
-
-
 #################
 # Secondary structure prediction using ViennaRNA tool
 
@@ -43,7 +41,7 @@ writeFasta(Sequence, "Data/RegionsLenFilter.fasta")
 RNAseqFasta <- readDNAStringSet('Data/RegionsLenFilter.fasta')
 SeqID = names(RNAseqFasta)
 RNAseqLength <- nchar(paste(RNAseqFasta))
-
+hist(RNAseqLength,breaks = seq(1,520,10))
 
 SecondaryStructureWithEnergy = readBStringSet("Data/RNAseconStructPredict_withoutSeq.txt")
 sum(names(SecondaryStructureWithEnergy)!=SeqID)
@@ -57,7 +55,8 @@ FreeEnergy <- gsub('[() ]','',
 extraDotIndex <- substr(FreeEnergy,1,1)=='.'
 FreeEnergy[extraDotIndex] = as.numeric(substr(FreeEnergy[extraDotIndex],2,
                                               nchar(FreeEnergy[extraDotIndex])))
-head(FreeEnergy)
+FreeEnergy <- as.numeric(FreeEnergy)
+class(FreeEnergy)
 
 
 
@@ -70,7 +69,8 @@ DotBracket_SingleMer <- sapply(1:length(DotBracketSecondStruct),
                            function(i) unlist(str_split(gsub(')','(',DotBracketSecondStruct[i]),'')),simplify = F)
 
 DotBracket_SingleMerMatrix <- MakeFeatureSpecificMatrix(All_Possible_DotBracket_SingleMer, DotBracket_SingleMer, Sequence$id)
-
+head(DotBracket_SingleMerMatrix)
+DrawFeatureDistribution(DotBracket_SingleMerMatrix)
 
 #################
 ### Generate Tri-mer feature for dot-bracket 
@@ -84,26 +84,20 @@ DotBracket_3mer <- sapply(1:length(DotBracketSecondStruct), function(i)
                                                   gsub( ')','(',DotBracketSecondStruct[i]), 3) )
 # make design matrix for Kmer
 DotBracket_3merMatrix <- MakeFeatureSpecificMatrix(All_Possible_DotBracket_3Kmer, DotBracket_3mer, Sequence$id)
-
-
-
-
+DrawFeatureDistribution(DotBracket_3merMatrix)
 
 
 
 #### merging all design matrices together
 RNAsecondaryStructFeatures <- cbind(FreeEnergy, DotBracket_SingleMerMatrix ,DotBracket_3merMatrix)
 RNAsecondaryStructFeatures$DB <- DotBracketSecondStruct
+write.csv(RNAsecondaryStructFeatures, 'Data/SecondStructFeatures_LenFilter.csv',row.names = T,col.names = T)
 
+TotalMatrixWithStruct <- cbind(TotalMatrix, RNAsecondaryStructFeatures)
+dim(TotalMatrixWithStruct)
+write.csv(TotalMatrixWithStruct, 'Data/MergedDesignMatLabel_SecondStruct_LenFilter.csv',row.names = T,col.names = T)
 
-
-
-
-
-
-
-
-
+test <- read.csv('Data/MergedDesignMatLabel_SecondStruct_LenFilter.csv', stringsAsFactors = F)
 
 
 

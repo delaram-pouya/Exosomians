@@ -87,8 +87,8 @@ FilterDesignMat <- designMatNgram[IC_FILTER_PASSED_INDICES,]
 write.csv(FilterDesignMat, 'Data/filterNgramDesignMat.csv',quote = F, na = 'NA', row.names = T, col.names = T)
 
 ## checking if filtered regions are compatible between DesignMatrix and label-Matrix
-sum(rownames(FilterCounts[[1]])!=rownames(FilterDesignMat))
-sum(rownames(LabelMat)!=rownames(FilterDesignMat))
+sum(rownames(FilterCounts[[1]])!=FilterDesignMat$X)
+sum(LabelMat$X!=FilterDesignMat$X)
 
 
 

@@ -19,6 +19,7 @@ summary(sapply(RNA_NucleotideKmers, length))
 
 
 Nucleotide_KmerMatrix <- MakeFeatureSpecificMatrix(All_Possible_Kmers, RNA_NucleotideKmers, designMat$id)
+DrawFeatureDistribution(Nucleotide_KmerMatrix)
 
 summary(rowSums(Nucleotide_KmerMatrix))
 write.csv(Nucleotide_KmerMatrix,'Data/ngramMatrix.csv',quote = F)

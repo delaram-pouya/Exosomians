@@ -1,5 +1,4 @@
 
-
 Initialize = function()
 {
   #### Loading required libraries ####
@@ -93,6 +92,14 @@ Make_All_Possible_Kmers <- function(KmerSize, VectorSize ,VectorOfElements){
   return(Permutes)
 }
 
+
+
+DrawFeatureDistribution <- function(FeatureMat ){
+  featureDis <- melt(colSums(FeatureMat))
+  featureDis <- data.frame(kmer=rownames(featureDis),Count=featureDis$value)
+  ggplot(featureDis,aes(x=kmer,y=Count,color='black'))+
+    geom_bar(stat = 'identity',color="dark blue", fill="cadetblue2",width=0.6)+xlab('Feature')+theme_bw()+coord_flip()
+}
 
 
 
