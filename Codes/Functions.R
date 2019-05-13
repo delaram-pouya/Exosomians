@@ -103,6 +103,15 @@ DrawFeatureDistribution <- function(FeatureMat ){
 
 
 
+RefineSecondStructColNames <- function(StructColName){
+  Characters <- unlist(str_split( StructColName ,'') )
+  Characters[Characters=='.'] <- '0'
+  Characters[Characters=='('] <- '1'
+  return(paste(Characters,collapse = ''))
+}
+
+
+
 
 draw_confusion_matrix <- function(cm, ModelName ,
                                   ManualFirstClassName, ManualSecondClassName,
