@@ -7,16 +7,17 @@ Initialize = function()
   
   #BiocManager::install('pacman')
   
-  pac <- list( 'ggplot2', 'limma', 'pheatmap','Biostrings',
+  pac <- list( 'ggplot2', 'limma', 'pheatmap','Biostrings','RNAstructureModuleMiner','RRNA',
               'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer', 
-              'plyr', 'gridExtra','caTools', 'h2o','gtools')
+              'plyr', 'gridExtra','caTools', 'h2o','gtools','stringr')
   
   print(paste(pac , lapply(pac, require, character.only = TRUE), sep = ' : '))
   
-  pacman::p_load( 'ggplot2', 'limma', 'pheatmap', 'Biostrings',
+  pacman::p_load( 'ggplot2', 'limma', 'pheatmap', 'Biostrings','RNAstructureModuleMiner','RRNA',
                  'VennDiagram','e1071' ,'reshape2', 'ggrepel', 'RColorBrewer',
-                 'plyr','gridExtra','caTools','h2o','gtools')
+                 'plyr','gridExtra','caTools','h2o','gtools','stringr')
 }
+
 
 
 #### Functions ####
@@ -53,24 +54,75 @@ CalcSummaryForCellLines = function(selectedCounts)
 
 
 
-draw_confusion_matrix <- function(cm) {
+makeKmerForNucleotide <- function(String, KmerSize){
+  sapply( 1:(nchar(String) - KmerSize+1 ), 
+          function(i)
+            substr(String, i, i+KmerSize-1 )
+  )
+}
+
+
+
+MakeKmerForDotBracket <- function(nucleotide, dotbracket, kmerSize){
+  sapply( 1:(nchar(dotbracket) - kmerSize+1 ), 
+          function(i)
+            paste0(substr(nucleotide,i+1,i+1),substr(dotbracket, i, i+kmerSize-1 ))
+  )
+}
+
+
+
+
+MakeFeatureSpecificMatrix <- function(All_possible_features, extractedFromData, id){
+  
+  MatchData2Features <- sapply(1:length(extractedFromData), 
+                               function(i) table(factor(extractedFromData[[i]], levels = All_possible_features )) ,simplify = F)
+  
+  FeatureMatrix <- as.data.frame(do.call(rbind, MatchData2Features))
+  colnames(FeatureMatrix) <- All_possible_features
+  rownames(FeatureMatrix) <- id
+  return(FeatureMatrix)
+}
+
+
+
+
+Make_All_Possible_Kmers <- function(KmerSize, VectorSize ,VectorOfElements){
+  Permutes <- gtools::permutations(n=VectorSize , r=KmerSize , v= VectorOfElements ,repeats=T)
+  Permutes <- apply( Permutes, 1, function(x) paste0(x, collapse=''))
+  return(Permutes)
+}
+
+
+
+
+
+draw_confusion_matrix <- function(cm, ModelName ,
+                                  ManualFirstClassName, ManualSecondClassName,
+                                  ManualFirstClassColor, ManualSecondClassColor) {
+  
+  ifelse(missing(ManualFirstClassColor), FirstClassColor='#3F97D0', FirstClassColor=ManualFirstClassColor)
+  ifelse(missing(ManualSecondClassColor), SecondClassColor='#3F97D0', SecondClassColor=ManualSecondClassColor)
+  
+  ifelse(missing(ManualFirstClassName), FirstClassName='Class1', FirstClassName=ManualFirstClassName)
+  ifelse(missing(ManualSecondClassName), SecondClassName='Class2', SecondClassName=ManualSecondClassName)
   
   layout(matrix(c(1,1,2)))
   par(mar=c(2,2,2,2))
   plot(c(100, 345), c(300, 450), type = "n", xlab="", ylab="", xaxt='n', yaxt='n')
-  title('CONFUSION MATRIX', cex.main=2)
+  title(paste0(ModelName,'- Confusion Matrix'), cex.main=1)
   
   # create the matrix 
-  rect(150, 430, 240, 370, col='#3F97D0')
-  text(195, 435, 'Class1', cex=1.2)
-  rect(250, 430, 340, 370, col='#F7AD50')
-  text(295, 435, 'Class2', cex=1.2)
+  rect(150, 430, 240, 370, col=FirstClassColor) # class1 color 
+  text(195, 435, FirstClassName , cex=1.2)
+  rect(250, 430, 340, 370, col=SecondClassColor) # calss2 color
+  text(295, 435, SecondClassName, cex=1.2)
   text(125, 370, 'Predicted', cex=1.3, srt=90, font=2)
   text(245, 450, 'Actual', cex=1.3, font=2)
-  rect(150, 305, 240, 365, col='#F7AD50')
-  rect(250, 305, 340, 365, col='#3F97D0')
-  text(140, 400, 'Class1', cex=1.2, srt=90)
-  text(140, 335, 'Class2', cex=1.2, srt=90)
+  rect(150, 305, 240, 365, col=SecondClassColor)
+  rect(250, 305, 340, 365, col=FirstClassColor)
+  text(140, 400, FirstClassName , cex=1.2, srt=90)
+  text(140, 335, SecondClassName, cex=1.2, srt=90)
   
   # add in the cm results 
   res <- as.numeric(cm$table)
